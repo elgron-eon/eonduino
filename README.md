@@ -51,3 +51,25 @@ check the gallery images. From top to bottom:
              VCC -|  \/  |- A0 unconnected
                   ++++++++
 ```
+# i2c bus
+i2c bus needs 2K pullup resitors, at least in SDA. SCL resistor can be omited
+
+# rtc pinout
+```
+    unconnected -+
+    unconnected -+
+            SCL -+
+            SDA -+
+            VCC -+
+            GND -+
+```
+
+# sram pinout
+```
+                ++++++++
+          MOSI -|      |- GND
+           SCK -|      |- 10K - VCC
+     VCC - 10K -|      |- MISO
+           VCC -|  \/  |- SS - 10K - VCC (active low)
+                ++++++++
+```
