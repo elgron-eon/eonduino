@@ -1,5 +1,5 @@
 # eonduino
-EON cpu system with arduino and real hardware. An emulator is included.
+[EON](https://github.com/elgron-eon/eon-cpu) cpu system with arduino and real hardware. An emulator is included.
 This is a very simple 32 bit EON cpu system, with 4KB ROM and 128KB RAM.
 The estimated clock frecuency is about 1MHz.
 
