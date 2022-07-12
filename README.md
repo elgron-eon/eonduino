@@ -20,4 +20,8 @@ to build emulator, just type `make`
 to build arduino image, type `make compile`  
 and finally type `make upload && make com` to enjoy your system !
 
-# Images
+# Gallery
+
+![foto1](photo/foto1.jpg?raw=true)
+![foto2](photo/foto2.jpg?raw=true)
+![plain](photo/without-avr.jpg?raw=true)
