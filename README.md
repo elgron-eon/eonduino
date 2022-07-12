@@ -8,7 +8,7 @@ The estimated clock frecuency is about 1MHz.
 * 24LC256 serial EEPROM, 128Kbit, I2C, 3.3 or 5v
 * 23LC1024 serial RAM, 1Mbit, SPI, 3.3 or 5v
 * DS1307 serial RTC, I2C, 3.3 or 5v
-* breadboard and dupont wires
+* breadboard, resistors, leds, one button swith and dupont wires
 
 # build
 Prerequisites:
