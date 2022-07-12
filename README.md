@@ -1,5 +1,5 @@
 # eonduino
-EON cpu system with arduino and real hardware. Also a simple emulator is included.
+EON cpu system with arduino and real hardware. An emulator is included.
 This is a very simple 32 bit EON cpu system, with 4KB ROM and 128KB RAM.
 The estimated clock frecuency is about 1MHz.
 
@@ -52,7 +52,7 @@ check the gallery images. From top to bottom:
                   ++++++++
 ```
 # i2c bus
-i2c bus needs 2K pullup resitors, at least in SDA. SCL resistor can be omited
+i2c bus needs 2K pullup resitors, at least in SDA(blue). SCL(orange) resistor can be omitted
 
 # rtc pinout
 ```
@@ -63,6 +63,11 @@ i2c bus needs 2K pullup resitors, at least in SDA. SCL resistor can be omited
             VCC -+
             GND -+
 ```
+
+# spi bus
+* SCK: orange
+* MISO: white
+* MOSI: blue
 
 # sram pinout
 ```
