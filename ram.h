@@ -41,18 +41,6 @@ static void ram_setMode (byte mode) {
     END
 }
 
-static void ram_init (void) {
-    // Slave Select PIN setup
-    pinMode (SS, OUTPUT);
-    digitalWrite (SS, HIGH);
-
-    // init SPI bus
-    SPI.begin ();
-
-    // set transfer mode
-    ram_setMode (Sequential);
-}
-
 #if 0
 static byte ram_readByte (uint32_t address) {
     BEGIN
@@ -76,7 +64,7 @@ static void ram_writeByte (uint32_t address, byte data) {
 }
 #endif
 
-static void ram_writePage (uint32_t address, const byte *data) {
+static void ram_writePage (uint32_t address, byte *data) {
     BEGIN
     SPI.transfer (RAM_WRITE);
     SPI.transfer ((byte) (address >> 16));
@@ -99,4 +87,43 @@ static void ram_readPage (uint32_t address, byte *data) {
     for (uint16_t i=0; i < SRAM_PAGE; i++)
 	data[i] = SPI.transfer (0x00);
     END
+}
+
+static void ram_init (void) {
+    // Slave Select PIN setup
+    pinMode (SS, OUTPUT);
+    digitalWrite (SS, HIGH);
+
+    // init SPI bus
+    SPI.begin ();
+
+    // set transfer mode
+    ram_setMode (Sequential);
+
+    // test RAM
+    if (0) {
+	sprintf (sbuf, "\t| SS ram is %i", SS); Serial.println (sbuf);
+
+	// test data
+	static byte data[SRAM_PAGE];
+	for (unsigned i = 0; i < SRAM_PAGE; i++)
+	    data[i] = i;
+
+	// write to RAM && reread
+	unsigned addr = 0x0400;
+	ram_writePage (addr, data);
+	ram_readPage  (addr, data);
+
+	// compare
+	bool fail = false;
+	for (unsigned i = 0; i < SRAM_PAGE; i++) {
+	    sprintf (sbuf, " %02x/%02x", i, data[i]);
+	    Serial.print (sbuf);
+	    if (i != data[i]) fail = true;
+	}
+	if (fail)
+	    Serial.println (F ("\n\t| RAM test fail"));
+	else
+	    Serial.println (F ("\n\t| RAM test pass"));
+    }
 }

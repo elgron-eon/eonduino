@@ -311,20 +311,13 @@ int main (int argc, char **argv) {
 	printf ("\n");
 
 	// dump line 0
-	line_dump (0, "Zero Line");
-	return 0;
+	line_dump ( 0, "Zero Line");
+	line_dump (58, "SP   Line");
+	line_dump (63, "RSP  Line");
 
-	// dump cache status
-	for (unsigned i = 0; i < NLINES; i++) {
-	    char title[8];
-	    sprintf (title, "L#%02x", i);
-	    line_dump (i, title);
-	}
-	return 0;
-
-	// dump sysvars area
-	unsigned begin = 4096;
-	unsigned end   = begin + 64;
+	// dump compiled word
+	unsigned begin = 0x4000;
+	unsigned end   = begin + 128;
 	for (; begin < end; begin += 16) {
 	    // get data
 	    uint8_t s[16];
@@ -343,6 +336,14 @@ int main (int argc, char **argv) {
 		printf ("%c", d > 31 && d < 127 ? d : '.');
 	    }
 	    printf ("\n");
+	}
+	return 0;
+
+	// dump cache status
+	for (unsigned i = 0; i < NLINES; i++) {
+	    char title[8];
+	    sprintf (title, "L#%02x", i);
+	    line_dump (i, title);
 	}
     }
     return 0;

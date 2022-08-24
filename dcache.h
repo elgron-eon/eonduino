@@ -52,8 +52,7 @@ static word32 dcache (word32 addr, bool write, unsigned bytes, word32 value) {
     word32   mask = SRAM_PAGE - 1;
     word32   tag  = addr & ~mask;
     unsigned line = (addr / SRAM_PAGE) % NLINES;
-    //sprintf (sbuf, "\t| addr %08lx line %u/%u tag %08lx mask %04lx", addr, line, NLINES, tag, mask);
-    //Serial.println (sbuf);
+    //sprintf (sbuf, "\t| addr %08lx line %u/%u tag %08lx mask %04lx", addr, line, NLINES, tag, mask); Serial.println (sbuf);
     dcache_use++;
 
     // find set & free entry
@@ -75,11 +74,11 @@ static word32 dcache (word32 addr, bool write, unsigned bytes, word32 value) {
     if (set < 0 && free < 0) {
 	// cache eviction
 	dcache_evicted++;
-	//line_dump (line, "evicted");
 
 	// select set to drop
 #if WAYS==2
 	free = dlines[line].lru & 1;
+	//printf ("addr %lx line %u evicted = %i with %lx\n", addr, line, free, dlines[line].tag[free]);
 #else
 #error "unsupported WAYS in dcache update LRU"
 #endif
@@ -103,9 +102,12 @@ static word32 dcache (word32 addr, bool write, unsigned bytes, word32 value) {
 		    *p++ = pgm_read_byte_near (zROM + i);
 	    } else {
 		eeprom_read (tag, p, SRAM_PAGE);
+		//sprintf (sbuf, "\t| ROM load tag %lx", tag); Serial.println (sbuf);
 	    }
-	} else
+	} else {
 	    ram_readPage (tag, p);
+	    //sprintf (sbuf, "\t| RAM load tag %lx", tag); Serial.println (sbuf);
+	}
 	dlines[line].tag[set] = tag;
 	dcache_load++;
 	//line_dump (line, "cache load");
@@ -127,6 +129,8 @@ static word32 dcache (word32 addr, bool write, unsigned bytes, word32 value) {
 	    case 4: p[0] = value >> 24; p[1] = value >> 16; p[2] = value >> 8; p[3] = value; break;
 	}
 	dlines[line].tag[set] |= FLAG_DIRTY;
+	//sprintf (sbuf, "\t| write %p (%p) line %u set %u diff %lu", p, dcache_raw, line, set, p - dcache_raw); Serial.println (sbuf);
+	//line_dump (0, "ram write");
     } else {
 	switch (bytes) {
 	    case 1: value = *p; break;

@@ -31,7 +31,7 @@ enum {
 
 // exceptions
 enum {
-    E_DECODE, E_ILLEGAL, E_AUTH, E_ALIGN, E_IRET
+    E_DECODE, E_ILLEGAL, E_AUTH, E_ALIGN, E_IRET, E_ZERODIV
 };
 
 // states
@@ -67,7 +67,11 @@ static void eon_raise (unsigned code) {
 static void eon_go (unsigned ncycles) {
     // check reset
     if (eon.st > S_RWAIT) {
+#ifdef BOARD_MCUV2
+	int rc = HIGH;
+#else
 	int rc = digitalRead (zRESET);
+#endif
 	if (rc == LOW) {
 	    eon.st = S_RESET;
 	    //Serial.println ("RESET !!!");
@@ -75,7 +79,9 @@ static void eon_go (unsigned ncycles) {
     }
 
     // step
-    for (; ncycles > 0; ncycles--, eon.s[REG_CYCLE]++)
+    //sprintf (sbuf, "\t************** %u cycles", ncycles); Serial.println (sbuf);
+    for (; ncycles > 0; ncycles--, eon.s[REG_CYCLE]++) {
+    //sprintf (sbuf, "\t %04x ST%u PC%04lx", ncycles, eon.st, eon.pc); Serial.println (sbuf);
     switch (eon.st) {
 	case S_RESET:
 	    eon.rst   = RESETCOUNT - 1;
@@ -114,9 +120,10 @@ static void eon_go (unsigned ncycles) {
 	    break;
 	case S_EXC:
 	    digitalWrite (zBAD, HIGH);
-	    if (0)
+	    if (0) {
 		eon.st = S_HALT;
-	    else {
+		sprintf (sbuf, "\t| exception %lx at %lx", eon.s[REG_EXC_CODE], eon.pc); Serial.println (sbuf);
+	    } else {
 		eon.s[REG_EXC_SAVE] = eon.pc | (eon.s[REG_STATUS] & 1); // USER/SYS mode bit
 		eon.s[REG_STATUS]  &= ~1;   // SYSMODE
 		eon.pc		    = eon.s[REG_EXC_PC];
@@ -140,6 +147,7 @@ static void eon_go (unsigned ncycles) {
 	    }
 	    eon.op  = dcache (eon.pc, false, 2, 0);
 	    eon.imm = 0;
+	    //sprintf (sbuf, "\t| FETCH at %lx = %x", eon.pc, eon.op); Serial.println (sbuf);
 	    eon.pc += 2;
 
 	    // decode opcode size
@@ -178,7 +186,7 @@ static void eon_go (unsigned ncycles) {
 		// debug
 		//if (eon.pc == 0x026c) eon.trace = 1;
 		//if (eon.pc == 0x02a6) eon.trace = 0;
-		if (0 && eon.trace) {
+		if (0) {
 		    sprintf (sbuf, "\t| %04lX EXEC %04X %08lX", eon.pc, eon.op, eon.imm);
 		    Serial.print (sbuf);
 		    for (unsigned i = 0; i < 16; i++) {
@@ -218,7 +226,7 @@ static void eon_go (unsigned ncycles) {
 						eon_raise (E_IRET);
 					    break;
 					case 0x8:   // enter
-					    eon.r[SP] = LIMIT32 (eon.r[SP] + eon.imm * 4);
+					    eon.r[SP] = LIMIT32 (eon.r[SP] + eon.imm * 8);
 					    break;
 					case 0xc:   // jmp i32
 					    eon.pc = LIMIT32 (eon.pc + (eon.imm * 2));
@@ -261,6 +269,21 @@ static void eon_go (unsigned ncycles) {
 				switch (fn) {
 				    case 0x8:	// csetz
 					eon.r[rd] = sv == 0 ? 1 : 0;
+					break;
+				    case 0x9:	// csetnz
+					eon.r[rd] = sv == 0 ? 0 : 1;
+					break;
+				    case 0xa:	// csetn
+					eon.r[rd] = ((int32_t) sv) < 0 ? 1 : 0;
+					break;
+				    case 0xb:	// csetnn
+					eon.r[rd] = ((int32_t) sv) < 0 ? 0 : 1;
+					break;
+				    case 0xc:	// csetp
+					eon.r[rd] = ((int32_t) sv) > 0 ? 1 : 0;
+					break;
+				    case 0xd:	// csetnp
+					eon.r[rd] = ((int32_t) sv) > 0 ? 0 : 1;
 					break;
 				    case 0xe:	// in
 					eon.r[rd] = cpu_in (sv);
@@ -334,6 +357,14 @@ static void eon_go (unsigned ncycles) {
 			    switch (fn) {
 				case 0x4: dv = lv + rv; break;
 				case 0x5: dv = lv - rv; break;
+				case 0x6: dv = lv * rv; break;
+				case 0x7: if (!rv)
+					     eon_raise (E_ZERODIV);
+					  else {
+					    dv		   = lv / rv;
+					    eon.s[REG_MOD] = lv % rv;
+					  }
+					  break;
 				case 0x8: dv = lv & rv; break;
 				case 0x9: dv = lv | rv; break;
 				case 0xa: dv = lv ^ rv; break;
@@ -354,6 +385,14 @@ static void eon_go (unsigned ncycles) {
 			    switch (k) {
 				case 0x4: dv = lv + rv; break;
 				case 0x5: dv = lv - rv; break;
+				case 0x6: dv = lv * rv; break;
+				case 0x7: if (!rv)
+					     eon_raise (E_ZERODIV);
+					  else {
+					    dv		   = lv / rv;
+					    eon.s[REG_MOD] = lv % rv;
+					  }
+					  break;
 				case 0x8: dv = lv & rv; break;
 				case 0x9: dv = lv | rv; break;
 				case 0xa: dv = lv ^ rv; break;
@@ -366,5 +405,6 @@ static void eon_go (unsigned ncycles) {
 			} break;
 		}
 	    } break;
+    }
     }
 }

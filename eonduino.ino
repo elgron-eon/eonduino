@@ -11,7 +11,7 @@
 #endif
 
 // config
-#define VERSION     "0.0.2"
+#define VERSION     "0.1.0"
 #define DELAYMS     20
 #define RESETCOUNT  15
 
@@ -20,19 +20,47 @@
 #define LIMIT32(n)  n
 #endif
 #ifndef SEXT8
-#define SEXT8(n)    ((long) (short int) (n))
+#define SEXT8(n)    ((int32_t) (int8_t) (n))
 #endif
 #ifndef SEXT16
-#define SEXT16(n)   ((long) (int) (n))
+#define SEXT16(n)   ((int32_t) (int16_t) (n))
 #endif
 
 // pins used
-#define zRX	0
-#define zTX	1
+#ifdef BOARD_MEGA
+
+// avr mega
 #define zRESET	13
 #define zBAD	12
 #define zRST	11
 #define zRUN	10
+
+#define EEPROM_DELAY	10
+#define EEPROM_CHUNK	32
+
+#elif defined (BOARD_MCUV2)
+
+// nodemcv2 esp8266
+#define zRESET	D5
+#define zBAD	D6
+#define zRST	D7
+#define zRUN	LED_BUILTIN
+
+#define EEPROM_DELAY	100
+#define EEPROM_CHUNK	32
+
+#else
+
+// emulator build
+#define zRESET	13
+#define zBAD	12
+#define zRST	11
+#define zRUN	10
+
+#define EEPROM_DELAY	10
+#define EEPROM_CHUNK	32
+
+#endif
 
 // basic types
 typedef unsigned int  word16;
@@ -146,12 +174,12 @@ static void cpu_out (word32 port, word32 v) {
 
 // dump rom to eeprom
 static void rom_dump (bool verify_only) {
-    #define chunk   32
+    #define chunk   EEPROM_CHUNK
     #define wchunk  16
     unsigned top = sizeof (zROM);
 
     if (!verify_only) {
-	Serial.print ("\ndump ROM to EEPROM:");
+	Serial.print (F ("\t| dump ROM to EEPROM:"));
 	for (unsigned addr = 0; addr < top; addr += wchunk) {
 	    // read page from internal rom
 	    static byte data[wchunk];
@@ -159,17 +187,18 @@ static void rom_dump (bool verify_only) {
 		data[i] = pgm_read_byte_near (zROM + (addr + i));
 
 	    // progress
-	    if (addr % 1024 == 0) Serial.println ("");
+	    if (addr % 1024 == 0) {Serial.println (""); delay (1000);}
 	    Serial.print (".");
 
 	    // write to eeprom
 	    eeprom_write   (addr, data, wchunk);
-	    delay	   (10);
+	    delay	   (EEPROM_DELAY);
 	}
-	delay (100);
+	Serial.println (F ("\n\t|EEPROM written"));
+	delay (500);
     }
 
-    Serial.print ("\nverify EEPROM:");
+    Serial.print (F ("\tverify EEPROM:"));
     for (unsigned addr = 0; addr < top; addr += chunk) {
 	// read page from internal rom
 	static byte data[chunk];
@@ -184,8 +213,7 @@ static void rom_dump (bool verify_only) {
 	static byte eeprom[chunk];
 	eeprom_read (addr, eeprom, chunk);
 	if (memcmp (data, eeprom, chunk) != 0) {
-	    sprintf (sbuf, "\nEEPROM verify addr %08x fail:", addr);
-	    Serial.println (sbuf);
+	    sprintf (sbuf, "\nEEPROM verify addr %08x fail:", addr); Serial.println (sbuf);
 	    for (unsigned i = 0; i < chunk; i++) {
 		sprintf (sbuf, " %02x/%02x", data[i], eeprom[i]);
 		Serial.print (sbuf);
@@ -193,7 +221,7 @@ static void rom_dump (bool verify_only) {
 	    break;
 	}
     }
-    Serial.println ("\ndone");
+    Serial.println (F ("\n\t| EEPROM verified"));
 }
 
 // setup: called once to initialize all stuff
@@ -217,7 +245,7 @@ void setup () {
     pinMode (zRESET, INPUT_PULLUP);
 
     // say hello
-    Serial.print (F ("\t| eonduino " VERSION));
+    Serial.println (F ("\t| eonduino " VERSION));
 
     // reset cpu
     eon_reset ();
