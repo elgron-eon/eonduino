@@ -12,7 +12,7 @@ The estimated clock frecuency is about 1MHz.
 
 # build
 Prerequisites:
-* eonrom.img from [eonrom](https://github.com/elgron-eon/eonrom)
+* eonrom.img version 0.1.0 from [eonrom](https://github.com/elgron-eon/eonrom)
 * [arduino-cli](https://github.com/arduino/arduino-cli)
 * a serial terminal emulator. I use [picocom](https://github.com/npat-efault/picocom), but any other will work.
 
